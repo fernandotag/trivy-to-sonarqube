@@ -1,3 +1,13 @@
+export interface SonarRule {
+  id: string,
+  name: string,
+  description: string,
+  engineId: string,
+  cleanCodeAttribute: string,
+  type: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL';
+  severity: 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'INFO';
+}
+
 export interface SonarIssue {
   engineId: string;
   ruleId: string;
@@ -5,10 +15,14 @@ export interface SonarIssue {
     message: string;
     filePath: string;
   };
-  type: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL';
-  severity: 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'INFO';
 }
+
 export type TrivySeverity = 'HIGH'|'LOW'|'CRITICAL'|'MEDIUM'
+
+export interface SonarReport {
+  rules: Array<SonarRule>,
+  issues: Array<SonarIssue>,
+}
 
 export interface TrivyReport {
   SchemaVersion: number;
@@ -47,6 +61,7 @@ export interface TrivyReport {
     Misconfigurations?: Array<{
       Type: string;
       ID: string;
+      AVDID: string
       Title: string;
       Description: string;
       Message: string;
@@ -56,6 +71,9 @@ export interface TrivyReport {
       Severity: TrivySeverity;
       PrimaryURL: string;
       References: string[];
+      CauseMetadata: {
+        Provider: string
+      }
     }>;
   }>;
 }
