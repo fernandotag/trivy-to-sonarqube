@@ -17,7 +17,7 @@ export interface SonarIssue {
   };
 }
 
-export type TrivySeverity = 'HIGH'|'LOW'|'CRITICAL'|'MEDIUM'
+export type TrivySeverity = 'HIGH' | 'LOW' | 'CRITICAL' | 'MEDIUM'
 
 export interface SonarReport {
   rules: Array<SonarRule>,

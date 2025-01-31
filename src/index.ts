@@ -1,16 +1,16 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { SonarReport, SonarRule, TrivyReport ,TrivySeverity} from './interfaces';
-const ENGINE_ID ='Trivy'
-const VULNERABILITY ='VULNERABILITY'
+import { SonarReport, SonarRule, TrivyReport, TrivySeverity } from './interfaces';
+const ENGINE_ID = 'Trivy'
+const VULNERABILITY = 'VULNERABILITY'
 
 /**
  * Convert Severity trivy to sonarqube
  * @param {string} level
  * @returns {SonarRule["severity"]}
  */
-function convertSeverity(level:TrivySeverity): SonarRule['severity'] {
+function convertSeverity(level: TrivySeverity): SonarRule['severity'] {
   switch (level) {
     case 'HIGH':
       return 'BLOCKER';
@@ -25,14 +25,12 @@ function convertSeverity(level:TrivySeverity): SonarRule['severity'] {
   }
 }
 
-export async function convertReport(inputFile: string, outputFile: string):Promise<void> {
+export async function convertReport(inputFile: string, outputFile: string): Promise<void> {
   const reportBlob = await fs.readFile(path.join(inputFile));
   const report: TrivyReport | undefined = JSON.parse(reportBlob.toString() || '{}');
-  const data: SonarReport =  {rules: [], issues: []}
+  const data: SonarReport = { rules: [], issues: [] }
 
   for (const file of report?.Results || []) {
-    // if exists
-    data.issues = []
     for (const issue of file?.Misconfigurations || []) {
 
       if (!data.rules.some(rule => rule.id === issue.AVDID)) {
@@ -42,7 +40,7 @@ export async function convertReport(inputFile: string, outputFile: string):Promi
           engineId: ENGINE_ID,
           type: VULNERABILITY,
           description: `<p>${issue.Description}</p><p><b>Resolution:</b> ${issue.Resolution}</p><p><b>Details:</b> (${issue.PrimaryURL})</p>`,
-          cleanCodeAttribute: "LOGICAL",
+          cleanCodeAttribute: "TRUSTWORTHY",
           severity: convertSeverity(issue.Severity),
         });
       }
@@ -55,7 +53,9 @@ export async function convertReport(inputFile: string, outputFile: string):Promi
           message: `${issue.Message}`,
         }
       });
+
     }
+
     // if exists
     for (const issue of file?.Vulnerabilities || []) {
       if (!data.rules.some(rule => rule.id === issue.VulnerabilityID)) {
@@ -64,10 +64,10 @@ export async function convertReport(inputFile: string, outputFile: string):Promi
           name: issue.Title,
           engineId: ENGINE_ID,
           type: VULNERABILITY,
-          description: issue.FixedVersion ? 
-            `<p>${issue.Description}</p><p><b>FixedVersion:</b> ${issue.FixedVersion}</p><p><b>Details:</b> ${issue.PrimaryURL}</p>` : 
+          description: issue.FixedVersion ?
+            `<p>${issue.Description}</p><p><b>FixedVersion:</b> ${issue.FixedVersion}</p><p><b>Details:</b> ${issue.PrimaryURL}</p>` :
             `<p>${issue.Description}</p><b>FixedVersion:</b>Incomplete fix</p><p><b>Details:</b> ${issue.PrimaryURL}</p>`,
-          cleanCodeAttribute: "LOGICAL",
+          cleanCodeAttribute: "TRUSTWORTHY",
           severity: convertSeverity(issue.Severity),
         });
       }
@@ -77,7 +77,7 @@ export async function convertReport(inputFile: string, outputFile: string):Promi
         ruleId: issue.VulnerabilityID,
         primaryLocation: {
           filePath: file.Target,
-          message: issue.FixedVersion ? 
+          message: issue.FixedVersion ?
             `Upgrade dependency ${issue.PkgName} from ${issue.InstalledVersion} to ${issue.FixedVersion}` :
             `Upgrade dependency ${issue.PkgName} from ${issue.InstalledVersion} to the latest version`,
         }
