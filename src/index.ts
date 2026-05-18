@@ -33,9 +33,14 @@ export async function convertReport(inputFile: string, outputFile: string): Prom
   for (const file of report?.Results || []) {
     for (const issue of file?.Misconfigurations || []) {
 
-      if (!data.rules.some(rule => rule.id === issue.AVDID)) {
+      // Newer Trivy misconfig output drops AVDID and only sets ID
+      // (e.g. "KSV-01010"); falling back keeps the mandatory SonarQube
+      // rule id/ruleId populated instead of emitting `undefined`.
+      const ruleId = issue.AVDID || issue.ID;
+
+      if (!data.rules.some(rule => rule.id === ruleId)) {
         data.rules.push({
-          id: issue.AVDID,
+          id: ruleId,
           name: issue.Title,
           engineId: ENGINE_ID,
           type: VULNERABILITY,
@@ -47,7 +52,7 @@ export async function convertReport(inputFile: string, outputFile: string): Prom
 
       data.issues.push({
         engineId: ENGINE_ID,
-        ruleId: issue.AVDID,
+        ruleId,
         primaryLocation: {
           filePath: file.Target,
           message: `${issue.Message}`,
